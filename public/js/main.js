@@ -43,9 +43,7 @@ require(['./lib/socket', 'constants', 'gamepad', 'hero'], function (Chaussette,c
 
     }
 
-    socket.on('start', function (username, params) {
-        console.log(username, params);
-    });
+
 
        socket.on('update_players', function (players) {
            console.log(players);
