@@ -33,7 +33,7 @@ require(['./lib/socket', 'constants', 'gamepad', 'hero'], function (Chaussette,c
     var hero;
     var name;
     var socket_id;
-    var pnjs = [];
+    var pnjs = {};
     for(var i = 0; i < constants.colors.length; i++) {
         $('.js-colors-list').append('<div class="js-color-item" data-value="' + constants.colors[i].value + '"style="border-color: ' + constants.colors[i].value + '; background-color: ' + constants.colors[i].value + '">' + constants.colors[i].name + '</div>')
     }
@@ -57,10 +57,11 @@ require(['./lib/socket', 'constants', 'gamepad', 'hero'], function (Chaussette,c
 function _startGame(players) {
     for(const socketId in players) {
         if (players[socketId].name !== name) {
-            pnjs.push(new Hero(players[socketId].x, players[socketId].y, players[socketId].color))
+            pnjs[socketId]=new Hero(players[socketId].x, players[socketId].y, players[socketId].color);
             // Nouveau PNJ
         } else {
-            hero = new Hero(players[socketId].x, players[socketId].y, players[socketId].color)
+            hero = new Hero(players[socketId].x, players[socketId].y, players[socketId].color);
+            socket_id = socketId;
         }
     }
     $('canvas').show();
@@ -69,15 +70,27 @@ function _startGame(players) {
     game.gamepad.handler.onInput(function(config) {
         if(config.axes.l) {
             hero.move(config.axes.l);
+            socket.emit("update_hero", socket_id ,{
+                x: hero.x,
+                y: hero.y
+            });
         }
     });
     gameLoop();
 }
-       socket.on('update_players', function (players) {
+       socket.on('init_players', function (players) {
            console.log(players);
            var names = Object.keys(players);
            if(names.length === 2) {
                _startGame(players);
+           }
+       });
+       socket.on('update_players', function (players) {
+           for (const socketId in players) {
+               if (players[socketId].name !== name) {
+                    pnjs[socketId].x = players[socketId].x;
+                    pnjs[socketId].y = players[socketId].y;
+               }
            }
        });
 
@@ -97,6 +110,11 @@ function _startGame(players) {
     function gameLoop() {
         requestAnimationFrame(gameLoop);
         _drawBackground(game.context);
-        hero.update(game.context)
+        hero.update(game.context);
+        for (const index in pnjs) {
+            const element = pnjs[index];
+            element.draw(game.context);
+
+        }
     }
 });
