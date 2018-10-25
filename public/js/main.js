@@ -47,7 +47,7 @@ require(['./lib/socket', 'constants', 'gamepad', 'hero', 'sniper'], function (Ch
             x: Math.random() * 200,
             y: Math.random() * 200,
             name: name,
-            color: color
+            color: color, isSniper:false
         };
         socket.emit('join_room', name, params);
 
@@ -79,14 +79,21 @@ function _startGame(players) {
     gameLoop();
 }
        socket.on('init_players', function (players) {
-           console.log(players);
            var names = Object.keys(players);
-           console.log(names)
            if(names.length === 1) {
-               _startGameTest(players);
-           }
+
+                socket.emit("generate_pnj", 100, constants.colors);
+            }
+
        });
-       socket.on('update_players', function (players) {
+
+       socket.on('start_game', function (players) {
+            console.log(players);
+            _startGame(players);
+        });
+
+        socket.on('update_players', function (players) {
+
            for (const socketId in players) {
                if (pnjs[socketId] && players[socketId].name !== name) {
                     pnjs[socketId].x = players[socketId].x;
@@ -94,6 +101,7 @@ function _startGame(players) {
                }
            }
        });
+
 
 
     $('body').on('click.chooseColor', '.js-color-item', function() {
