@@ -15,5 +15,8 @@
   "bugs": {
     "url": "https://github.com/monsieurbonhomme/protonight/issues"
   },
-  "homepage": "https://github.com/monsieurbonhomme/protonight#readme"
+  "homepage": "https://github.com/monsieurbonhomme/protonight#readme",
+  "dependencies": {
+    "jquery": "^3.3.1"
+  }
 }

@@ -1,17 +1,13 @@
 require.config({
-
 });
 
-require(['gamepad', 'hero'], function(GamepadHandler, Hero) {
-    let game = {
+require(['constants', 'gamepad', 'hero'], function(constants, GamepadHandler, Hero) {
+    /*let game = {
         canvas: document.querySelector('canvas'),
         gamepad: {
             handler: new GamepadHandler()
         },
-        foreground: {
-            color: "#ffffff",
-            opacity: 1
-        }
+        state: 'lobby'
     };
 
     game.canvas.width = 800;
@@ -19,14 +15,29 @@ require(['gamepad', 'hero'], function(GamepadHandler, Hero) {
     game.context = game.canvas.getContext('2d');
 
     game.hero = new Hero();
+    game.hero.size = 50;
     game.hero.x = game.canvas.width / 2;
     game.hero.y = game.canvas.height / 2;
-    game.hero.move = game.hero.velocityMove;
     game.gamepad.handler.onInput(function(config) {
         if(config.axes.l) {
             game.hero.move(config.axes.l);
         }
-    });
+    });*/
+    for(var i = 0; i < constants.colors.length; i++) {
+        $('.js-colors-list').append('<div class="js-color-item" data-value="' + constants.colors[i].value + '"style="border-color: ' + constants.colors[i].value + '; background-color: ' + constants.colors[i].value + '">' + constants.colors[i].name + '</div>')
+    }
+
+    function _joinRoom() {
+        var color = $('.js-color-item.selected').attr('data-value');
+        // A toi Nico !!! CONNEXION
+
+    }
+
+    $('body').on('click.chooseColor', '.js-color-item', function() {
+        $('.js-color-item').removeClass('selected');
+        $(this).addClass('selected');
+        $('.js-validate-button').show();
+    }).on('click.validateColor', '.js-validate-button', _joinRoom);
 
     function _drawBackground(c) {
         c.clearRect(0, 0, game.canvas.width, game.canvas.height);
@@ -37,10 +48,10 @@ require(['gamepad', 'hero'], function(GamepadHandler, Hero) {
     function gameLoop() {
         requestAnimationFrame(gameLoop);
         _drawBackground(game.context);
-        game.hero.update(game.context)
+        game.hero.draw(game.context)
     }
 
-    gameLoop();
+    //gameLoop();
 
 
 });
