@@ -33,9 +33,24 @@ require(['./lib/socket', 'constants', 'gamepad', 'hero'], function (Chaussette,c
     function _joinRoom() {
         var color = $('.js-color-item.selected').attr('data-value');
         var name = $('.js-name-input').val();
-        // A toi Nico !!! CONNEXION
-        socket.emit('join_room', Date.now(), 'protonight');
+
+        //init position
+        var params = {
+            x: "23",
+            y: "45"
+        };
+        socket.emit('join_room', name, params);
+
     }
+
+    socket.on('start', function (username, params) {
+        console.log(username, params);
+    });
+
+       socket.on('update_players', function (players) {
+           console.log(players);
+       });
+
 
     $('body').on('click.chooseColor', '.js-color-item', function() {
         $('.js-color-item').removeClass('selected');
