@@ -32,6 +32,7 @@ require(['./lib/socket', 'constants', 'gamepad', 'hero'], function (Chaussette,c
     });*/
     var hero;
     var name;
+    var socket_id;
     var pnjs = [];
     for(var i = 0; i < constants.colors.length; i++) {
         $('.js-colors-list').append('<div class="js-color-item" data-value="' + constants.colors[i].value + '"style="border-color: ' + constants.colors[i].value + '; background-color: ' + constants.colors[i].value + '">' + constants.colors[i].name + '</div>')
@@ -45,6 +46,7 @@ require(['./lib/socket', 'constants', 'gamepad', 'hero'], function (Chaussette,c
         var params = {
             x: Math.random() * 200,
             y: Math.random() * 200,
+            name: name,
             color: color
         };
         socket.emit('join_room', name, params);
@@ -53,12 +55,12 @@ require(['./lib/socket', 'constants', 'gamepad', 'hero'], function (Chaussette,c
 
 
 function _startGame(players) {
-    for(const _name in players) {
-        if(_name !== name) {
-            pnjs.push(new Hero(players[_name].x, players[_name].y, players[_name].color))
+    for(const socketId in players) {
+        if (players[socketId].name !== name) {
+            pnjs.push(new Hero(players[socketId].x, players[socketId].y, players[socketId].color))
             // Nouveau PNJ
         } else {
-            hero = new Hero(players[_name].x, players[_name].y, players[_name].color)
+            hero = new Hero(players[socketId].x, players[socketId].y, players[socketId].color)
         }
     }
     $('canvas').show();
