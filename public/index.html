@@ -4,11 +4,14 @@
 </head>
 <body>
 <canvas width="800" height="400"></canvas>
-<div class="NameInputContainer">
-    <input type="text" class="js-name-input" placeholder="Ton nom">
+<div class="js-form">
+    <div class="NameInputContainer">
+        <input type="text" class="js-name-input" placeholder="Ton nom">
+    </div>
+    <div class="js-colors-list ColorsList"></div>
+    <div class="js-validate-button ValidateButton">C'est parti</div>
 </div>
-<div class="js-colors-list ColorsList"></div>
-<div class="js-validate-button ValidateButton">C'est parti</div>
+
 <script src="js/lib/jquery.js"></script>
 <script src="js/lib/require.min.js" data-main="js/main.js"></script>
 </body>

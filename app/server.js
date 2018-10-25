@@ -3,7 +3,8 @@ function Server(app, port) {
 	this.port = port;
 	this.roomName = "protonight";
 	this.httpServer = app.listen(port);
-	this.io = require("socket.io")(this.httpServer);
+    console.log("Le server écoute le port " + port);
+    this.io = require("socket.io")(this.httpServer);
 	this.start();
 };
 
@@ -40,11 +41,6 @@ Server.prototype.start = function () {
 
 			console.log("Déconnection du client :" + socket.id);
 		});
-	});
-
-
-	this.httpServer.listen(this.port, function () {
-		console.log("Le server écoute le port " + that.port);
 	});
 };
 

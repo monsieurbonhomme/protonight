@@ -1,7 +1,7 @@
 define(['./collideable-circle'], function(CollideableCircle, Sparkle, Bullet) {
     class Hero extends CollideableCircle {
-        constructor() {
-            super(100, 100, 20, '#0074D9', 5);
+        constructor(x, y, color) {
+            super(x, y, 20, color, 5);
             this.speed = .4;
             this.strength = 1;
             this.sparkles = [];
