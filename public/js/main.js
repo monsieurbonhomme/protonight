@@ -2,7 +2,7 @@ require.config({
 });
 
 
-require(['./lib/socket', 'constants', 'gamepad', 'hero'], function (Chaussette,constants, GamepadHandler, Hero) {
+require(['./lib/socket', 'constants', 'gamepad', 'hero', 'sniper'], function (Chaussette,constants, GamepadHandler, Hero, Sniper) {
    var socket = Chaussette.connect();
 
     let game = {
@@ -81,13 +81,14 @@ function _startGame(players) {
        socket.on('init_players', function (players) {
            console.log(players);
            var names = Object.keys(players);
-           if(names.length === 2) {
-               _startGame(players);
+           console.log(names)
+           if(names.length === 1) {
+               _startGameTest(players);
            }
        });
        socket.on('update_players', function (players) {
            for (const socketId in players) {
-               if (players[socketId].name !== name) {
+               if (pnjs[socketId] && players[socketId].name !== name) {
                     pnjs[socketId].x = players[socketId].x;
                     pnjs[socketId].y = players[socketId].y;
                }
@@ -116,5 +117,33 @@ function _startGame(players) {
             element.draw(game.context);
 
         }
+    }
+
+    function _startGameTest(players) {
+        for(const socketId in players) {
+            if (players[socketId].name !== name) {
+                pnjs[socketId]=new Hero(players[socketId].x, players[socketId].y, players[socketId].color);
+                // Nouveau PNJ
+            } else {
+                if(true || players[socketId].isSniper) {
+                    hero = new Sniper();
+                } else {
+                    hero = new Hero(players[socketId].x, players[socketId].y, players[socketId].color);
+                }
+                socket_id = socketId;
+            }
+        }
+        $('canvas').show();
+        $('.js-form').hide();
+        game.gamepad.handler.onInput(function(config) {
+            if(config.axes.l) {
+                hero.move(config.axes.l);
+                socket.emit("update_hero", socket_id ,{
+                    x: hero.x,
+                    y: hero.y
+                });
+            }
+        });
+        gameLoop();
     }
 });
