@@ -1,0 +1,19 @@
+{
+  "name": "protonight",
+  "version": "1.0.0",
+  "description": "Some prototype",
+  "main": "app/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/monsieurbonhomme/protonight.git"
+  },
+  "author": "Nykaus et Monsieurbonhomme",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/monsieurbonhomme/protonight/issues"
+  },
+  "homepage": "https://github.com/monsieurbonhomme/protonight#readme"
+}
