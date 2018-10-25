@@ -1,7 +1,10 @@
 require.config({
 });
 
-require(['constants', 'gamepad', 'hero'], function(constants, GamepadHandler, Hero) {
+
+require(['./lib/socket', 'constants', 'gamepad', 'hero'], function (Chaussette,constants, GamepadHandler, Hero) {
+   var socket = Chaussette.connect();
+
     /*let game = {
         canvas: document.querySelector('canvas'),
         gamepad: {
@@ -30,7 +33,7 @@ require(['constants', 'gamepad', 'hero'], function(constants, GamepadHandler, He
     function _joinRoom() {
         var color = $('.js-color-item.selected').attr('data-value');
         // A toi Nico !!! CONNEXION
-
+        socket.emit('join_room', Date.now(), 'protonight');
     }
 
     $('body').on('click.chooseColor', '.js-color-item', function() {
@@ -52,6 +55,5 @@ require(['constants', 'gamepad', 'hero'], function(constants, GamepadHandler, He
     }
 
     //gameLoop();
-
 
 });
