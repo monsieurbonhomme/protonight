@@ -47,6 +47,7 @@ require(['./lib/socket', 'constants', 'gamepad', 'hero', 'sniper'], function (Ch
             x: Math.random() * 200,
             y: Math.random() * 200,
             name: name,
+            type: 'pj',
             color: color, isSniper:false
         };
         socket.emit('join_room', name, params);
@@ -80,26 +81,27 @@ function _startGame(players) {
 }
        socket.on('init_players', function (players) {
            var names = Object.keys(players);
-           if(names.length === 1) {
-
-                socket.emit("generate_pnj", 100, constants.colors);
+           if(names.length === 2) {
+                socket.emit("generate_pnj", 4, constants.colors);
             }
 
        });
 
        socket.on('start_game', function (players) {
             console.log(players);
-            _startGame(players);
+            _startGameTest(players);
         });
 
-        socket.on('update_players', function (players) {
+        socket.on('update_players', function (socketId,player) {
+            if (pnjs[socketId] && player.name !== name) {
+                pnjs[socketId].x = player.x;
+                pnjs[socketId].y = player.y;
 
-           for (const socketId in players) {
-               if (pnjs[socketId] && players[socketId].name !== name) {
-                    pnjs[socketId].x = players[socketId].x;
-                    pnjs[socketId].y = players[socketId].y;
-               }
            }
+       });
+
+        socket.on('change_pnj_axes', function (socketId,axes) {
+            pnjs[socketId].axePos = axes;
        });
 
 
@@ -116,9 +118,45 @@ function _startGame(players) {
         c.fillRect(0, 0, game.canvas.width, game.canvas.height);
     }
 
+    function randomMovePnj(timer) {
+        for (const index in pnjs) {
+
+            if ((!pnjs[index].moveTimer || timer > pnjs[index].moveTimer) && pnjs[index].type == "pnj" ) {
+                if ( pnjs[index].tick == true){
+                    pnjs[index].axePos = [Math.random() * 2 - 1, Math.random() * 2 - 1];
+
+                }
+                pnjs[index].tick = !pnjs[index].tick;
+                pnjs[index].moveTimer = timer + (Math.random()* 120 +60);
+
+            }
+            pnjs[index].move(pnjs[index].axePos);
+            pnjs[index].update(game.context);
+            socket.emit("update_hero", index,  {
+                    x: pnjs[index].x,
+                    y: pnjs[index].y
+                });
+
+        }
+
+
+     }
+
+     var timer = 0;
+
     function gameLoop() {
+        timer++;
         requestAnimationFrame(gameLoop);
         _drawBackground(game.context);
+        if(hero.isSniper){
+            randomMovePnj(timer);
+        }else{
+            for (const index in pnjs) {
+                pnjs[index].move(pnjs[index].axePos);
+                pnjs[index].update(game.context);
+            }
+        }
+
         hero.update(game.context);
         for (const index in pnjs) {
             const element = pnjs[index];
@@ -130,13 +168,13 @@ function _startGame(players) {
     function _startGameTest(players) {
         for(const socketId in players) {
             if (players[socketId].name !== name) {
-                pnjs[socketId]=new Hero(players[socketId].x, players[socketId].y, players[socketId].color);
+                pnjs[socketId] = new Hero(players[socketId].x, players[socketId].y, players[socketId].color, players[socketId].type);
                 // Nouveau PNJ
             } else {
-                if(true || players[socketId].isSniper) {
+                if( players[socketId].isSniper) {
                     hero = new Sniper();
                 } else {
-                    hero = new Hero(players[socketId].x, players[socketId].y, players[socketId].color);
+                    hero = new Hero(players[socketId].x, players[socketId].y, players[socketId].color, players[socketId].type);
                 }
                 socket_id = socketId;
             }
@@ -144,6 +182,7 @@ function _startGame(players) {
         $('canvas').show();
         $('.js-form').hide();
         game.gamepad.handler.onInput(function(config) {
+
             if(config.axes.l) {
                 hero.move(config.axes.l);
                 socket.emit("update_hero", socket_id ,{

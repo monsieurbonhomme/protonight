@@ -1,7 +1,8 @@
 define(['./collideable-circle'], function(CollideableCircle, Sparkle, Bullet) {
     class Hero extends CollideableCircle {
-        constructor(x, y, color) {
+        constructor(x, y, color,type) {
             super(x, y, 20, color, 5);
+            this.type = type;
             this.speed = .4;
             this.strength = 1;
             this.sparkles = [];
@@ -10,6 +11,7 @@ define(['./collideable-circle'], function(CollideableCircle, Sparkle, Bullet) {
                 x: 1,
                 y: 0
             };
+            this.axePos=[0,0];
             this.shootTimer = 0;
             this.shootRate = 10;
             this.bullets = [];
@@ -20,7 +22,7 @@ define(['./collideable-circle'], function(CollideableCircle, Sparkle, Bullet) {
             this.y += axes[1] * 2;
         }
 
-        velocityMove(axes) {
+        move(axes) {
             this.velocity.x += axes[0] * this.speed;
             this.velocity.y += axes[1] * this.speed;
         }

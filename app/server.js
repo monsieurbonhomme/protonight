@@ -11,7 +11,7 @@ function Server(app, port) {
 Server.prototype.start = function () {
 	that = this;
 	var params_players={};
-
+var isPasDejaPasser = true;
 	this.io.on('connection', function (socket) {
 		console.log("Connection du client :" + socket.id);
 
@@ -26,6 +26,8 @@ Server.prototype.start = function () {
 
 		socket.on("generate_pnj", function (nbPnj,colors) {
 
+			if(isPasDejaPasser){
+
 			//qui est le sniper
 			var keys = Object.keys(params_players);
 			params_players[keys[Math.floor(Math.random() * keys.length)]].isSniper = true;
@@ -36,18 +38,23 @@ Server.prototype.start = function () {
 					x: Math.random() * 800,
 					y: Math.random() * 400,
 					name: 'pnj' + index,
+					type:'pnj',
 					color: colors[Math.floor(Math.random() * colors.length)].value
 				}
+			}
+			isPasDejaPasser=false;
 			}
 			socket.broadcast.emit("start_game", params_players);
 			socket.emit("start_game", params_players);
 		});
 
+
 		socket.on("update_hero", function (socket_id,position) {
 			params_players[socket_id].x=position.x;
 			params_players[socket_id].y=position.y;
-			socket.broadcast.emit("update_players", params_players);
+			socket.broadcast.emit("update_players", socket_id, params_players[socket_id]);
 		});
+
 
 		// socket.on("leave_room", function (username) {
 		// console.log("{" + that.roomName + "} l'utilisateur " + username + " s'est déconnecté du salon !");

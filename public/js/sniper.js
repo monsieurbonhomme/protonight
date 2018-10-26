@@ -4,6 +4,7 @@ define(['object'], function(Object) {
             super(400, 200, 0, 10, 10, '#FF4136', 0)
             this.x = 400;
             this.y = 200;
+            this.type = 'pj';
             this.speed = .2;
             this.color = '#FF4136';
             this.size = 20;
@@ -12,7 +13,8 @@ define(['object'], function(Object) {
             this.velocity = {
                 x: 0,
                 y: 0
-            }
+            };
+            this.isSniper = true
         }
 
         move(axes) {
