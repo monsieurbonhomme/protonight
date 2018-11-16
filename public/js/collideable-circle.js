@@ -74,7 +74,10 @@ define(['./circle'], function (Circle) {
             super.move();
         }
         draw(c) {
-            super.draw(c)
+			super.draw(c);
+			if(this.isDead) {
+				this.opacity = 0.3
+			}
         }
     }
     return CollideableCircle;

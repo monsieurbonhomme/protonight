@@ -1,3 +1,6 @@
+var constants = require("./constants");
+var Hero = require("./hero");
+var waitedPlayers = 2;
 
 function Server(app, port) {
 	this.port = port;
@@ -6,82 +9,100 @@ function Server(app, port) {
 	console.log("Le server écoute le port " + this.port);
 	this.io = require("socket.io")(this.httpServer);
 	this.start();
+	gameLoopServer();
 };
+let players = {};
+let sniperId;
+
+
+function gameLoopServer() {
+	setInterval(() => {
+		for (let playerId in players) {
+			players[playerId].move();
+		}
+	}, 1000 / 60);
+}
+
+function _generateDecor() {
+	var count = 100;
+	let decor = [];
+	for(let i = 0; i < count; i++) {
+		decor.push({
+			x: Math.random() * 800,
+			y: Math.random() * 400,
+			color: constants.colors[Math.floor(Math.random() * constants.colors.length)].value
+		})
+	}
+	return decor;
+}
 
 Server.prototype.start = function () {
 	that = this;
-	var params_players={};
-var isPasDejaPasser = true;
+
 	this.io.on('connection', function (socket) {
 		console.log("Connection du client :" + socket.id);
 
-		socket.on("join_room", function (username,params) {
-			console.log("{" + that.roomName + "} l'utilisateur " + username + " s'est connecté au salon !");
-			socket.join(that.roomName);
-			params_players[socket.id] = params;
-			socket.broadcast.emit("init_players", params_players);
-			socket.emit("init_players", params_players);
+		socket.on("join_room", function () {
+			players[socket.id] = new Hero({
+				id: socket.id,
+				x: Math.random() * 800,
+				y: Math.random() * 400,
+				color: constants.colors[Math.floor(Math.random() * constants.colors.length)].value
+			});
+			socket.emit("get_hero", players[socket.id]);
+
+			var keys = Object.keys(players);
+			console.log(keys.length + ' joueurs connectés !')
+			if (keys.length === waitedPlayers) {
+				var rand = Math.floor(Math.random() * keys.length)
+				sniperId = keys[rand];
+				players[sniperId].isSniper = true;
+				var decors = _generateDecor();
+				socket.broadcast.emit("start_game", players, decors);
+				socket.emit('start_game', players, decors);
+			}
 		});
 
+		socket.on("update_direction", function (direction) {
+			if (!players[socket.id]) {
+				return;
+			}
+			players[socket.id].axes = direction;
+			players[socket.id].move();
+			socket.broadcast.emit("update_players", players);
+			socket.emit("update_players", players);
+		});
 
-		socket.on("generate_pnj", function (nbPnj,colors) {
-
-			if(isPasDejaPasser){
-
-			//qui est le sniper
-			var keys = Object.keys(params_players);
-			params_players[keys[Math.floor(Math.random() * keys.length)]].isSniper = true;
-
-			for (let index = 0; index < nbPnj; index++) {
-				params_players['pnj'+index]=
-				{
-					x: Math.random() * 800,
-					y: Math.random() * 400,
-					name: 'pnj' + index,
-					type:'pnj',
-					color: colors[Math.floor(Math.random() * colors.length)].value
+		socket.on("shoot", function () {
+			let TheSniper = players[sniperId];
+			let deadCounter = 0;
+			for (let playerId in players) {
+				if (playerId != sniperId) {
+					if (players[playerId].collidesWith(TheSniper)) {
+						players[playerId].isDead = true;
+					}
+					if(players[playerId].isDead) {
+						deadCounter++;
+					}
 				}
 			}
-			isPasDejaPasser=false;
+			console.log(deadCounter, Object.keys(players).length);
+			if (deadCounter === Object.keys(players).length - 1) {
+				socket.emit('sniper_won');
+				socket.broadcast.emit('sniper_won');
 			}
-			socket.broadcast.emit("start_game", params_players);
-			socket.emit("start_game", params_players);
 		});
 
 
-		socket.on("update_hero", function (socket_id,position) {
-			params_players[socket_id].x=position.x;
-			params_players[socket_id].y=position.y;
-			socket.broadcast.emit("update_players", socket_id, params_players[socket_id]);
+		socket.on('remove_player', function (id) {
+			delete players[id];
 		});
-
-
-		// socket.on("leave_room", function (username) {
-		// console.log("{" + that.roomName + "} l'utilisateur " + username + " s'est déconnecté du salon !");
-		// 	socket.to(that.roomName).emit("messages", "{" + that.roomName + "} l'utilisateur " + username + " s'est déconnecté du salon !");
-		// 	socket.leave(that.roomName);
-		// });
-
-
-		// socket.on('messages', function (data, username) {
-		// 	console.log("{" + that.roomName + "} l'utilisateur " + username + " envoi le message " + data);
-		// 	socket.to(that.roomName).emit('broad', data, username, that.roomName);
-
-		// });
 
 		socket.on("disconnect", function () {
-			if (params_players[socket.id]){
-				delete params_players[socket.id];
-			}
-
-			console.log("Déconnection du client :" + socket.id);
+			console.log(arguments)
 		});
 	});
 
-
-	//this.httpServer.listen(this.port, function () {
-	//	console.log("Le server écoute le port " + that.port);
-	//});
 };
 
 module.exports = Server;

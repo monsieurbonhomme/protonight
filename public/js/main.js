@@ -1,196 +1,159 @@
-require.config({
-});
+require.config({});
 
+require(['./lib/socket', 'hero', 'gamepad', 'sniper', 'circle'], function (Chaussette, Hero, Gamepad, Sniper, Circle) {
+	var socket = Chaussette.connect();
 
-require(['./lib/socket', 'constants', 'gamepad', 'hero', 'sniper'], function (Chaussette,constants, GamepadHandler, Hero, Sniper) {
-   var socket = Chaussette.connect();
+	let game = {
+		canvas: document.querySelector('canvas'),
+		hero: undefined,
+		gamepad: new Gamepad()
+	}
+	game.canvas.width = 800;
+	game.canvas.height = 400;
+	var ctx = game.canvas.getContext('2d');
+	var decor = [];
 
-    let game = {
-        canvas: document.querySelector('canvas'),
-        gamepad: {
-            handler: new GamepadHandler()
-        },
-        state: 'lobby'
-    };
-    game.canvas.width = 800;
-    game.canvas.height = 400;
-    game.context = game.canvas.getContext('2d');
+	function startGame() {
+		$('canvas').show();
+		$('.js-form').hide();
+		socket.emit('join_room');
+	}
 
-/*
-    game.canvas.width = 800;
-    game.canvas.height = 400;
-    game.context = game.canvas.getContext('2d');
+	socket.on('sniper_won', function() {
+		socket.emit('remove_player', game.hero.id);
+		socket.disconnect();
+		sniperWon = true;
+		setTimeout(function() {
+			window.location.reload();
+		}, 2000);
+	})
 
-    game.hero = new Hero();
-    game.hero.size = 50;
-    game.hero.x = game.canvas.width / 2;
-    game.hero.y = game.canvas.height / 2;
-    game.gamepad.handler.onInput(function(config) {
-        if(config.axes.l) {
-            game.hero.move(config.axes.l);
-        }
-    });*/
-    var hero;
-    var name;
-    var socket_id;
-    var pnjs = {};
-    for(var i = 0; i < constants.colors.length; i++) {
-        $('.js-colors-list').append('<div class="js-color-item" data-value="' + constants.colors[i].value + '"style="border-color: ' + constants.colors[i].value + '; background-color: ' + constants.colors[i].value + '">' + constants.colors[i].name + '</div>')
-    }
+	socket.on('start_game', function (players, decorConfig) {
+		for (playerId in players) {
+			if (playerId === heroConfig.id) {
+				if (players[playerId].isSniper) {
+					game.hero = new Sniper(heroConfig)
+				} else {
+					game.hero = new Hero(heroConfig)
+				}
+			} else {
+				var config = {
+					x: players[playerId].x,
+					y: players[playerId].y,
+					id: players[playerId].id,
+					axes: players[playerId].axes,
+					color: players[playerId].color
+				};
+				if (players[playerId].isSniper) {
+					pnjs[playerId] = new Sniper(config)
+				} else {
+					pnjs[playerId] = new Hero(config)
+				}
+			}
+		}
+		for (var i = 0; i < decorConfig.length; i++) {
+			var c = decorConfig[i];
+			decor.push(new Circle(c.x, c.y, 20, c.color, 0))
+		}
+		gameLoop();
+	});
+	var heroConfig;
+	socket.on('get_hero', function (hero) {
+		heroConfig = hero
+		game.gamepad.onInput(function (config) {
 
-    function _joinRoom() {
-        var color = $('.js-color-item.selected').attr('data-value');
-        name = $('.js-name-input').val();
+			if(game.hero) {
+				if (game.hero.isSniper) {
+					if (game.hero.isShooting == false && !!config.triggers.r) {
+						socket.emit("shoot");
+						game.hero.isShooting = true;
+					}
+					if (!config.triggers.r) {
+						game.hero.isShooting = false;
+					}
+				}
 
-        //init position
-        var params = {
-            x: Math.random() * 200,
-            y: Math.random() * 200,
-            name: name,
-            type: 'pj',
-            color: color, isSniper:false
-        };
-        socket.emit('join_room', name, params);
-
-    }
-
-
-function _startGame(players) {
-    for(const socketId in players) {
-        if (players[socketId].name !== name) {
-            pnjs[socketId]=new Hero(players[socketId].x, players[socketId].y, players[socketId].color);
-            // Nouveau PNJ
-        } else {
-            hero = new Hero(players[socketId].x, players[socketId].y, players[socketId].color);
-            socket_id = socketId;
-        }
-    }
-    $('canvas').show();
-    $('.js-form').hide();
-    hero.move= hero.velocityMove;
-    game.gamepad.handler.onInput(function(config) {
-        if(config.axes.l) {
-            hero.move(config.axes.l);
-            socket.emit("update_hero", socket_id ,{
-                x: hero.x,
-                y: hero.y
-            });
-        }
-    });
-    gameLoop();
-}
-       socket.on('init_players', function (players) {
-           var names = Object.keys(players);
-           if(names.length === 2) {
-                socket.emit("generate_pnj", 4, constants.colors);
-            }
-
-       });
-
-       socket.on('start_game', function (players) {
-            console.log(players);
-            _startGameTest(players);
-        });
-
-        socket.on('update_players', function (socketId,player) {
-            if (pnjs[socketId] && player.name !== name) {
-                pnjs[socketId].x = player.x;
-                pnjs[socketId].y = player.y;
-
-           }
-       });
-
-        socket.on('change_pnj_axes', function (socketId,axes) {
-            pnjs[socketId].axePos = axes;
-       });
+				if (!game.hero.isDead) {
+					socket.emit("update_direction", {
+						id: game.hero.id,
+						x: config.axes.l[0],
+						y: config.axes.l[1]
+					});
+				}
+			}
 
 
 
-    $('body').on('click.chooseColor', '.js-color-item', function() {
-        $('.js-color-item').removeClass('selected');
-        $(this).addClass('selected');
-        $('.js-validate-button').show();
-    }).on('click.validateColor', '.js-validate-button', _joinRoom);
+		});
+	})
+	let pnjs = {};
+	let sniperWon = false;
+	socket.on('update_players', function (players) {
+		if (!game.hero) {
+			return
+		}
+		for (let playerId in players) {
+			if (playerId === game.hero.id) {
+				game.hero.x = players[playerId].x;
+				game.hero.y = players[playerId].y;
+				game.hero.axes = players[playerId].axes;
+				game.hero.isDead = players[playerId].isDead;
+				game.hero.size = players[playerId].size;
+			} else {
+				pnjs[playerId].x = players[playerId].x;
+				pnjs[playerId].y = players[playerId].y;
+				pnjs[playerId].axes = players[playerId].axes;
+				pnjs[playerId].isDead = players[playerId].isDead;
+				pnjs[playerId].size = players[playerId].size;
+			}
+		}
+	})
 
-    function _drawBackground(c) {
-        c.clearRect(0, 0, game.canvas.width, game.canvas.height);
-        c.fillStyle = '#EEE';
-        c.fillRect(0, 0, game.canvas.width, game.canvas.height);
-    }
+	function _drawBackground(c) {
+		c.clearRect(0, 0, game.canvas.width, game.canvas.height);
+		c.fillStyle = '#EEE';
+		c.fillRect(0, 0, game.canvas.width, game.canvas.height);
+	}
+	let foregroundOpacity = 0;
 
-    function randomMovePnj(timer) {
-        for (const index in pnjs) {
+	function _drawForeground(c) {
 
-            if ((!pnjs[index].moveTimer || timer > pnjs[index].moveTimer) && pnjs[index].type == "pnj" ) {
-                if ( pnjs[index].tick == true){
-                    pnjs[index].axePos = [Math.random() * 2 - 1, Math.random() * 2 - 1];
+		c.globalAlpha = foregroundOpacity;
+		c.fillStyle = '#333';
+		c.fillRect(0, 0, game.canvas.width, game.canvas.height);
+		c.globalAlpha = 1;
+	}
+var sniperImage = new Image();
+sniperImage.src = '/images/salt.jpg';
+	function gameLoop() {
+		requestAnimationFrame(gameLoop);
+		_drawBackground(ctx);
+		game.hero.move();
+		game.hero.draw(ctx);
+		for (let pnj in pnjs) {
+			pnjs[pnj].move();
+			pnjs[pnj].draw(ctx);
+		}
+		for (var i = 0; i < decor.length; i++) {
+			decor[i].draw(ctx)
+		}
 
-                }
-                pnjs[index].tick = !pnjs[index].tick;
-                pnjs[index].moveTimer = timer + (Math.random()* 120 +60);
+		if (game.hero.isSniper) {
+			var dif = Math.abs(game.hero.axes.x) + Math.abs(game.hero.axes.y);
+			if (dif) {
+				foregroundOpacity = Math.min(1, foregroundOpacity + 0.01)
+			} else {
+				foregroundOpacity = Math.max(0, foregroundOpacity - 0.01)
+			}
+			_drawForeground(ctx)
+		}
+		if(sniperWon) {
+			ctx.drawImage(sniperImage, 0, 0, 2048, 1121, 0, 0, 800, 400);
+		}
+	}
 
-            }
-            pnjs[index].move(pnjs[index].axePos);
-            pnjs[index].update(game.context);
-            socket.emit("update_hero", index,  {
-                    x: pnjs[index].x,
-                    y: pnjs[index].y
-                });
-
-        }
-
-
-     }
-
-     var timer = 0;
-
-    function gameLoop() {
-        timer++;
-        requestAnimationFrame(gameLoop);
-        _drawBackground(game.context);
-        if(hero.isSniper){
-            randomMovePnj(timer);
-        }else{
-            for (const index in pnjs) {
-                pnjs[index].move(pnjs[index].axePos);
-                pnjs[index].update(game.context);
-            }
-        }
-
-        hero.update(game.context);
-        for (const index in pnjs) {
-            const element = pnjs[index];
-            element.draw(game.context);
-
-        }
-    }
-
-    function _startGameTest(players) {
-        for(const socketId in players) {
-            if (players[socketId].name !== name) {
-                pnjs[socketId] = new Hero(players[socketId].x, players[socketId].y, players[socketId].color, players[socketId].type);
-                // Nouveau PNJ
-            } else {
-                if( players[socketId].isSniper) {
-                    hero = new Sniper();
-                } else {
-                    hero = new Hero(players[socketId].x, players[socketId].y, players[socketId].color, players[socketId].type);
-                }
-                socket_id = socketId;
-            }
-        }
-        $('canvas').show();
-        $('.js-form').hide();
-        game.gamepad.handler.onInput(function(config) {
-
-            if(config.axes.l) {
-                hero.move(config.axes.l);
-                socket.emit("update_hero", socket_id ,{
-                    x: hero.x,
-                    y: hero.y
-                });
-            }
-        });
-        gameLoop();
-    }
-});
+	window.onbeforeunload = function () {
+		socket.emit('remove_player', game.hero.id);
+	}
+	startGame();
+})

@@ -1,26 +1,33 @@
 define(['object'], function(Object) {
     class Sniper extends Object{
-        constructor() {
-            super(400, 200, 0, 10, 10, '#FF4136', 0)
-            this.x = 400;
-            this.y = 200;
-            this.type = 'pj';
-            this.speed = .2;
-            this.color = '#FF4136';
-            this.size = 20;
-            this.weigth = 2;
-            this.holeSize = 10;
-            this.velocity = {
-                x: 0,
+        constructor(config) {
+            super(config.x, config.y, 20, config.color, 5);
+			this.speed = .4;
+			this.id = config.id;
+            this.strength = 1;
+            this.sparkles = [];
+            this.timer = 0;
+            this.shootDirection = {
+                x: 1,
                 y: 0
             };
-            this.isSniper = true
+            this.axes = {x: 0, y: 0};
+            this.shootTimer = 0;
+            this.shootRate = 10;
+			this.bullets = [];
+
+			this.color = '#FF4136';
+			this.size = 20;
+			this.weigth = 2;
+			this.holeSize = 10;
+			this.isSniper = true;
+			this.isShooting = false;
         }
 
-        move(axes) {
-            super.move();
-            this.velocity.x += axes[0] * this.speed;
-            this.velocity.y += axes[1] * this.speed;
+
+        move() {
+        	this.x += this.axes.x * 2;
+        	this.y += this.axes.y * 2;
         }
 
         draw(c) {
